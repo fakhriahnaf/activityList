@@ -7,14 +7,16 @@ import tempData from './tempData';
 import TodoList from './src/components/todo-list';
 import AddListModal from './src/components/addListModal';
 import Fire from './src/utils/Firebase';
+import { ActivityIndicator } from 'react-native';
 
 
 
 export default class App extends React.Component {
   state = {
     addActivityVisible: false,
-    listData: tempData, 
-    user: {}
+    listData: [], 
+    user: {},
+    loading : true
   };
 
   componentDidMount() {
@@ -22,9 +24,20 @@ export default class App extends React.Component {
       if(error) {
         return alert ('uh ada yang erorr');
       }
+
+      firebase.getLists( listData => {
+        this.setState({ listData, user}, () => {
+          this.setState({loading: false })
+        });
+      });
+
       this.setState({ user });
     });
 
+  }
+
+  componentWillUnmount() {
+    firebase.detach();
   }
 
   toggleAddActivityModal() {
@@ -36,24 +49,37 @@ export default class App extends React.Component {
   }
 
   addList =list => {
-    this.setState({listData : [
-        ...this.state.listData, 
-          {...list, id: this.state.listData.length + 1, todo: [] 
-        }] 
-      });
+    // this.setState({listData : [
+    //     ...this.state.listData, 
+    //       {...list, id: this.state.listData.length + 1, todo: [] 
+    //     }] 
+    //   });
+    firebase.addList({
+      name: list.name,
+      color: list.color,
+      todo: [],
+    })
   };
 
   updateList = list => {
-    this.setState({
-      listData: this.state.listData.map(item=> { 
-          return item.id === list.id ? list : item
-      })
-    })
+    firebase.updateList(list);
+    // this.setState({
+    //   listData: this.state.listData.map(item=> { 
+    //       return item.id === list.id ? list : item
+    //   })
+    // })
   }
 
   
 
   render() {
+    if (this.state.loading) {
+      return (
+        <View style={styles.container}>
+          <ActivityIndicator size='large' color={colors.blue}/>
+        </View>
+      );
+    }
     return (
       <View style={styles.container}>
         <Modal
@@ -88,7 +114,7 @@ export default class App extends React.Component {
         <View style={{ height: 275, paddingLeft: 32 }}>
           <FlatList
             data={this.state.listData}
-            keyExtractor={item => item.name}
+            keyExtractor={item => item.id.toString()}
             horizontal={true}
             showsHorizontalScrollIndicator={false}
             renderItem={({ item }) => this.renderList(item)}

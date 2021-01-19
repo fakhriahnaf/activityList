@@ -52,6 +52,7 @@ export default class TodoList extends React.Component {
                     </View>
                 </TouchableOpacity>
             </View>
+
         )
     }
 }
